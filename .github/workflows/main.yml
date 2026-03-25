@@ -1,0 +1,13 @@
+name: volleyball-game
+
+on: push
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Git Checkout
+        uses: actions/checkout@v4
+
+      
