@@ -13,6 +13,7 @@ env:
 jobs:
   frontend:
     runs-on: ubuntu-22.04
+    environment: DEVOPS   # 👈 Added here
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -50,6 +51,7 @@ jobs:
   backend:
     runs-on: ubuntu-22.04
     needs: frontend
+    environment: DEVOPS   # 👈 Added here
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
