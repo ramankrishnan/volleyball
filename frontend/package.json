@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "build": "mkdir -p build && echo '<h1>Volleyball App</h1>' > build/index.html"
   },
   "dependencies": {
     "express": "^5.2.1",
