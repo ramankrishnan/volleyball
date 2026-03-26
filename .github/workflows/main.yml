@@ -18,23 +18,35 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # 🔥 CACHE NODE MODULES
+      # 🔥 Cache Node modules
       - name: Cache npm
         uses: actions/cache@v3
         with:
           path: ~/.npm
           key: npm-${{ hashFiles('frontend/package-lock.json') }}
+          restore-keys: |
+            npm-
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
 
-      - name: Install frontend dependencies
+      - name: Install dependencies
         run: npm install
         working-directory: frontend
 
-      - name: Verify frontend server starts
+      - name: Build frontend (production)
+        run: npm run build
+        working-directory: frontend
+
+      - name: Upload frontend build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/build/
+
+      - name: Verify frontend server
         run: node server.js & sleep 5
         working-directory: frontend
 
@@ -44,7 +56,6 @@ jobs:
           username: ${{ env.DOCKERHUB_USERNAME }}
           password: ${{ env.DOCKERHUB_TOKEN }}
 
-      # 🔥 BUILD WITH UNIQUE TAG + LATEST
       - name: Build Docker image (frontend)
         run: |
           docker build -t $DOCKERHUB_USERNAME/volleyball-frontend:$IMAGE_TAG frontend
@@ -54,11 +65,20 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ env.DOCKERHUB_USERNAME }}/volleyball-frontend:${{ env.IMAGE_TAG }}
+          format: 'table'
+          output: 'frontend-trivy.txt'
+
+      - name: Upload frontend Trivy report
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-trivy-report
+          path: frontend-trivy.txt
 
       - name: Push frontend image
         run: |
           docker push $DOCKERHUB_USERNAME/volleyball-frontend:$IMAGE_TAG
           docker push $DOCKERHUB_USERNAME/volleyball-frontend:latest
+
 
   backend:
     runs-on: ubuntu-22.04
@@ -68,23 +88,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # 🔥 CACHE PYTHON
+      # 🔥 Cache pip
       - name: Cache pip
         uses: actions/cache@v3
         with:
           path: ~/.cache/pip
           key: pip-${{ hashFiles('backend/requirements.txt') }}
+          restore-keys: |
+            pip-
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
-      - name: Install backend dependencies
+      - name: Install dependencies
         run: pip install -r requirements.txt
         working-directory: backend
 
-      - name: Verify backend server starts
+      - name: Verify backend server
         run: python app.py & sleep 5
         working-directory: backend
 
@@ -103,8 +125,34 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ env.DOCKERHUB_USERNAME }}/volleyball-backend:${{ env.IMAGE_TAG }}
+          format: 'table'
+          output: 'backend-trivy.txt'
+
+      - name: Upload backend Trivy report
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-trivy-report
+          path: backend-trivy.txt
 
       - name: Push backend image
         run: |
           docker push $DOCKERHUB_USERNAME/volleyball-backend:$IMAGE_TAG
           docker push $DOCKERHUB_USERNAME/volleyball-backend:latest
+
+
+  deploy:
+    runs-on: ubuntu-22.04
+    needs: backend
+    environment: DEVOPS
+
+    steps:
+      - name: Download frontend build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-build
+
+      - name: Show artifact content
+        run: ls -R
+
+      - name: Deploy step (Demo)
+        run: echo "Deploying application using Docker images..."
