@@ -1,4 +1,4 @@
-require('dotenv').config(); // Load .env variables (optional but recommended)
+//require('dotenv').config(); // Load .env variables (optional but recommended)
 
 const express = require('express');
 const { createProxyMiddleware } = require('http-proxy-middleware');
