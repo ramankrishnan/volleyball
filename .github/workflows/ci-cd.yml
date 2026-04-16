@@ -55,3 +55,9 @@ jobs:
       run: |
         cd deploy
         zip -r ../app-build.zip .
+
+    - name: Upload ZIP as GitHub Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: app-build
+        path: app-build.zip
