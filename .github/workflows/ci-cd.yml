@@ -1,4 +1,4 @@
-name: CI Pipeline (Build + Zip + JFrog Upload)
+name: CI Pipeline (Frontend + Backend + Zip + JFrog)
 
 on:
   push:
@@ -10,24 +10,48 @@ jobs:
 
     steps:
 
-    # 1️⃣ Checkout Code
+    # 1️⃣ Checkout
     - name: Checkout Code
       uses: actions/checkout@v3
 
-    # 2️⃣ Setup Node (change if Python project)
+    # -------------------------
+    # 🔷 FRONTEND BUILD (Node)
+    # -------------------------
     - name: Setup Node
       uses: actions/setup-node@v3
       with:
         node-version: '18'
 
-    # 3️⃣ Install Dependencies
-    - name: Install Dependencies
+    - name: Install Frontend Dependencies
+      working-directory: frontend
       run: npm install
 
-    # 4️⃣ Build Project
-    - name: Build Application
+    - name: Build Frontend
+      working-directory: frontend
       run: npm run build
 
-    # 5️⃣ Create ZIP Artifact
-    - name: Create ZIP File
-      run: zip -r app-build.zip .
+    # -------------------------
+    # 🔶 BACKEND SETUP (Python)
+    # -------------------------
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install Backend Dependencies
+      working-directory: backend
+      run: pip install -r requirements.txt
+
+    # -------------------------
+    # 📦 CREATE CLEAN PACKAGE
+    # -------------------------
+    - name: Prepare Deployment Folder
+      run: |
+        mkdir deploy
+        cp -r backend deploy/
+        cp -r frontend/build deploy/frontend-build
+
+    - name: Create ZIP
+      run: |
+        cd deploy
+        zip -r ../app-build.zip .
